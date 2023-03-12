@@ -15,17 +15,15 @@ class Scraper(scrapy.Spider):
     search_endpoint = 'https://www.pinterest.com/resource/BaseSearchResource/get/?'
     channels = set()
     result_counter = 0
-    page_no=0
 
     def start_requests(self):
         self.maxResults = self.maxResults
         for keyword in self.keywords:
             params = self.build_params(keyword.get("key"))
-            url = self.search_endpoint + f'source_url={params.get("source_url")}' + '&data=' + json.dumps(params['data'])
+            url = self.search_endpoint + f'source_url={params.get("source_url")}&data={json.dumps(params["data"])}'
             yield scrapy.Request(url, callback=self.parse, cb_kwargs={"keyword":keyword.get("key"), "uid": keyword.get("idOutRequest")})
 
     async def parse(self, response, keyword, uid):
-        print(f" \n{self.page_no}\n")
         data = json.loads(response.body)
         results = data.get("resource_response", {}).get("data", {}).get("results")
         if results:
@@ -54,15 +52,13 @@ class Scraper(scrapy.Spider):
                     if self.result_counter < self.maxResults:
                         self.result_counter +=1
                         print(f"[{self.result_counter}] >> {item}")
-                        # yield item
                     else:
                         break
         if (self.result_counter < self.maxResults):
-            self.page_no+=1
             bookmark = data.get('resource_response').get("bookmark")
             params = self.build_params(keyword)
             params['data']['options'].update({"bookmarks": [bookmark]})
-            url = self.search_endpoint + f'source_url={params.get("source_url")}' + '&data=' + json.dumps(params['data']) + '&_=' + data.get("request_identifier")
+            url = self.search_endpoint + f'source_url={params.get("source_url")}&data={json.dumps(params["data"])}&_={data.get("request_identifier")}'
             yield scrapy.Request(url, callback=self.parse, cb_kwargs={"keyword": keyword, "uid": uid})
 
 
