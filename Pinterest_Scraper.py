@@ -31,11 +31,9 @@ class Scraper(scrapy.Spider):
                     channelName = result.get("pinner", {}).get("username")
                     channelURL = f'https://www.pinterest.com/{channelName}/'
                     metric_Subscribers = result.get("pinner", {}).get("follower_count")
-                    url = self.from_profile_parameters(self.resource_endpoint, channelName)
-                    response = await self.get_url(url)
-                    data_helper = response.get("resource_response", {}).get("data")
-                    metric_MonthlyViews = data_helper.get("profile_views")
-                    channelDescritpion = data_helper.get("about")
+                    resource_data = await self.get_resource(channelName)
+                    metric_MonthlyViews = resource_data.get("profile_views")
+                    channelDescritpion = resource_data.get("about")
                     item = dict(
                         idOutRequest=uid,
                         keyword=keyword,
@@ -51,17 +49,23 @@ class Scraper(scrapy.Spider):
                         print(f"[{self.result_counter}] >> {item}")
                     else:
                         break
-        if (self.result_counter < self.maxResults):
-            bookmark = data.get('resource_response').get("bookmark")
-            params = self.build_params(keyword)
-            params['data']['options'].update({"bookmarks": [bookmark]})
-            url = self.search_endpoint + f'source_url={params.get("source_url")}&data={json.dumps(params["data"])}&_={data.get("request_identifier")}'
-            yield scrapy.Request(url, callback=self.parse, cb_kwargs={"keyword": keyword, "uid": uid})
+            bookmark = data.get('resource_response', {}).get("bookmark")
+            if (self.result_counter < self.maxResults) and bookmark:
+                params = self.build_params(keyword)
+                params['data']['options'].update({"bookmarks": [bookmark]})
+                url = self.search_endpoint + f'source_url={params.get("source_url")}&data={json.dumps(params["data"])}&_={data.get("request_identifier")}'
+                yield scrapy.Request(url, callback=self.parse, cb_kwargs={"keyword": keyword, "uid": uid})
 
 
     async def get_url(self, url):
         response = await self.crawler.engine.download(scrapy.Request(url))
         data = json.loads(response.body)
+        return data
+
+    async def get_resource(self, channelName):
+        url = self.from_profile_parameters(self.resource_endpoint, channelName)
+        response = await self.get_url(url)
+        data = response.get("resource_response", {}).get("data")
         return data
 
     @staticmethod
