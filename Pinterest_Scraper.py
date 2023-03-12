@@ -1,12 +1,9 @@
-import random
-
 import scrapy
 import logging
 from scrapy.crawler import CrawlerProcess
 import json
 from CONSTANT import search_parameters, profile_parameters
 from copy import deepcopy
-from urllib.parse import urlencode
 
 
 class Scraper(scrapy.Spider):
@@ -93,7 +90,7 @@ crawler = CrawlerProcess(settings={
         "Host": "www.pinterest.com"
     },
     "LOG_LEVEL": logging.DEBUG,
-    "LOG_ENABLED": True,
+    "LOG_ENABLED": False,
     "DOWNLOAD_DELAY": 3,
     "CONCURRENT_REQUESTS": 8,
     "HTTPCACHE_ENABLED": True,
