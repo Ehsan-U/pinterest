@@ -82,7 +82,7 @@ class Updator(scrapy.Spider):
             item['emailfromLatestPostDescr'] += emailFromLatestPostDescription
             item['metric_SubscribersOverTime'] += metric_SubscribersOverTime
             item['metric_MonthlyViewsOverTime'] += metric_MonthyViewsOverTime
-            pprint(item)
+            yield item
 
 
     async def from_activity_data(self, activity_data):
