@@ -52,3 +52,30 @@ pin_parameters = {
     }
 }
 
+
+# Sample JSON
+api_response = [{
+    "id":1,
+    "idChannel":1016265609572278824,
+    "channelName":"sarahtrindadet",
+    "channelURL":"https://www.pinterest.com/sarahtrindadet/",
+    "metric_LastUploadDate":'',
+    "metric_ChannelNumberOfPosts":0,
+    "metric_Subscribers": 0,
+    "metric_SubscribersOverTime":'',
+    "metric_MonthlyViews":0,
+    "metric_MonthlyViewsOverTime":'',
+    "metric_Last30PostsDatePosted&NumberofComments":'',
+    "metric_Last30PostsDatePosted&Reactions":'',
+    "linksfromChannelDescription":'',
+    "linksfrom30LatestPosts":'',
+    "lastUpdated":'',
+    "keyword":'rumi',
+    "emailfromChannelDescription":'',
+    "emailfromChannel":'',
+    "emailfromLatestPostDescr":'',
+    "channelDescription":'',
+    "text_30LatestPostsDescription":'',
+    "canMessage":False,
+    "iDOutRequest":1
+}]

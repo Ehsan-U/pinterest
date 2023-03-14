@@ -12,6 +12,9 @@ class Scraper(scrapy.Spider):
     search_endpoint = 'https://www.pinterest.com/resource/BaseSearchResource/get/?'
     channels = set()
     result_counter = 0
+    batch = []
+    batch_size = 50
+
 
     def start_requests(self):
         self.maxResults = self.maxResults
@@ -19,6 +22,7 @@ class Scraper(scrapy.Spider):
             params = self.build_params(keyword.get("key"))
             url = self.search_endpoint + f'source_url={params.get("source_url")}&data={json.dumps(params["data"])}'
             yield scrapy.Request(url, callback=self.parse, cb_kwargs={"keyword":keyword.get("key"), "uid": keyword.get("idOutRequest")})
+
 
     async def parse(self, response, keyword, uid):
         data = json.loads(response.body)
@@ -33,7 +37,7 @@ class Scraper(scrapy.Spider):
                     metric_Subscribers = result.get("pinner", {}).get("follower_count")
                     resource_data = await self.get_resource(channelName)
                     metric_MonthlyViews = resource_data.get("profile_views")
-                    channelDescritpion = resource_data.get("about")
+                    channelDescription = resource_data.get("about")
                     item = dict(
                         idOutRequest=uid,
                         keyword=keyword,
@@ -42,11 +46,14 @@ class Scraper(scrapy.Spider):
                         channelURL=channelURL,
                         metric_Subscribers=metric_Subscribers,
                         metric_MonthlyViews=metric_MonthlyViews if metric_MonthlyViews != -1 else 0,
-                        channelDescritpion=channelDescritpion
+                        channelDescription=channelDescription
                     )
                     if self.result_counter < self.maxResults:
                         self.result_counter +=1
-                        print(f"[{self.result_counter}] >> {item}")
+                        self.batch.append(item)
+                        print(f"[{self.result_counter}]")
+                        if self.result_counter % self.batch_size == 0:
+                            self.save_to_db(self.batch)
                     else:
                         break
             bookmark = data.get('resource_response', {}).get("bookmark")
@@ -55,6 +62,8 @@ class Scraper(scrapy.Spider):
                 params['data']['options'].update({"bookmarks": [bookmark]})
                 url = self.search_endpoint + f'source_url={params.get("source_url")}&data={json.dumps(params["data"])}&_={data.get("request_identifier")}'
                 yield scrapy.Request(url, callback=self.parse, cb_kwargs={"keyword": keyword, "uid": uid})
+            else:
+                self.save_to_db(self.batch)
 
 
     async def get_url(self, url):
@@ -62,11 +71,13 @@ class Scraper(scrapy.Spider):
         data = json.loads(response.body)
         return data
 
+
     async def get_resource(self, channelName):
         url = self.from_profile_parameters(self.resource_endpoint, channelName)
         response = await self.get_url(url)
         data = response.get("resource_response", {}).get("data")
         return data
+
 
     @staticmethod
     def build_params(keyword):
@@ -75,6 +86,7 @@ class Scraper(scrapy.Spider):
         params['data']['options']['query'] = keyword
         return params
 
+
     @staticmethod
     def from_profile_parameters(resource_endpoint, channelName):
         profile_params = deepcopy(profile_parameters)
@@ -82,6 +94,15 @@ class Scraper(scrapy.Spider):
         profile_params['data']['options']['username'] = channelName
         url = resource_endpoint + "source_url=" + profile_params['source_url'] + '&' + "data=" + json.dumps(profile_params['data'])
         return url
+
+
+    def save_to_db(self, batch):
+        if batch:
+            # insert to db, batch is 50 records
+            # code here
+            print(batch)
+            self.batch = []
+
 
 
 
@@ -99,6 +120,7 @@ crawler = CrawlerProcess(settings={
     "CONCURRENT_REQUESTS": 8,
     "HTTPCACHE_ENABLED": True,
     "REQUEST_FINGERPRINTER_IMPLEMENTATION": "2.7",
+
 })
-crawler.crawl(Scraper, keywords=[{"key": 'Rumi', "idOutRequest": 1}], maxResults=50)
+crawler.crawl(Scraper, keywords=[{"key": 'Batman', "idOutRequest": 1}], maxResults=20)
 crawler.start()
